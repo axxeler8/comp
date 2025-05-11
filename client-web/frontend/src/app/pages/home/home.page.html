@@ -1,0 +1,16 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Inventario LyL</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <ion-list>
+    <ion-item *ngFor="let repuesto of repuestos">
+      {{ repuesto.nombre }} (SKU: {{ repuesto.sku }}) - Stock: {{ repuesto.stock }}
+    </ion-item>
+  </ion-list>
+  <ion-button expand="block" routerLink="/consultar">Consultar por SKU</ion-button>
+  <ion-button expand="block" routerLink="/reservar">Reservar</ion-button>
+  <ion-button expand="block" routerLink="/stock">Agregar Stock</ion-button>
+</ion-content>
