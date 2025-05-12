@@ -1,4 +1,4 @@
-import { Routes } from '@angular/router';
+import { Routes, provideRouter } from '@angular/router';
 
 export const routes: Routes = [
   {
@@ -14,4 +14,14 @@ export const routes: Routes = [
     path: 'consultar',
     loadComponent: () => import('./pages/consultar/consultar.page').then( m => m.ConsultarPage)
   },
+  {
+    path: 'reservar',
+    loadComponent: () => import('./pages/reservar/reservar.page').then( m => m.ReservarPage)
+  },
+  {
+    path: 'stock',
+    loadComponent: () => import('./pages/stock/stock.page').then( m => m.StockPage)
+  }
 ];
+
+export const appRoutingProviders = [provideRouter(routes)];

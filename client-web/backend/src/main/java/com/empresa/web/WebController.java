@@ -8,6 +8,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/inventario")
+@CrossOrigin(origins = "http://localhost:8100") 
 public class WebController {
     private final InventarioService svc;
 

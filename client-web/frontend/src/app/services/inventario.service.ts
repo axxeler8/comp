@@ -13,7 +13,7 @@ interface Repuesto {
   providedIn: 'root'
 })
 export class InventarioService {
-  private apiUrl = 'http://localhost:1099/api/inventario'; // Ajusta el puerto según tu backend
+  private apiUrl = 'http://localhost:8080/api/inventario'; // Ajusta el puerto según tu backend
 
   constructor(private http: HttpClient) { }
 
@@ -26,10 +26,18 @@ export class InventarioService {
   }
 
   reservar(sku: number, cantidad: number): Observable<boolean> {
-    return this.http.post<boolean>(`${this.apiUrl}/reservar`, { sku, cantidad });
+  return this.http.post<boolean>(
+    `${this.apiUrl}/reservar`, 
+    new URLSearchParams({ sku: sku.toString(), cant: cantidad.toString() }),
+    { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    );
   }
 
   agregarStock(sku: number, cantidad: number): Observable<void> {
-    return this.http.post<void>(`${this.apiUrl}/stock`, { sku, cantidad });
+    return this.http.post<void>(
+      `${this.apiUrl}/stock`, 
+      new URLSearchParams({ sku: sku.toString(), cant: cantidad.toString() }),
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    );
   }
 }
