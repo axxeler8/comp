@@ -31,19 +31,6 @@
 
     <build>
         <plugins>
-            <!-- Spring Boot plugin for web app -->
-            <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${spring.boot.version}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
             <!-- Exec plugin para consolas y servidor RMI -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>

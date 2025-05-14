@@ -14,4 +14,10 @@ public interface InventarioService extends Remote {
     Reserva consultarReserva(int idReserva) throws RemoteException;
     void agregarReserva(int idVehiculo, int sku, int cantidad) throws RemoteException;
     void liberarReserva(int idReserva) throws RemoteException;
+
+    Ubicacion consultarUbicacion(int idUbicacion) throws RemoteException;
+    int consultarStockUbicacion(int idUbicacion) throws RemoteException;
+    Vehiculo consultarVehiculo(int idVehiculo) throws RemoteException;
+    Repuesto consultarRepuestoEnUbicacion(int idUbicacion, int sku) throws java.rmi.RemoteException;
+
 }

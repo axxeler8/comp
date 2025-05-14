@@ -6,7 +6,7 @@ import java.util.List;
 
 public class InventarioServiceImpl extends UnicastRemoteObject implements InventarioService {
     public InventarioServiceImpl() throws RemoteException { super(); }
-
+    
     @Override public List<Repuesto> verRepuestos() throws RemoteException {
         return Database.obtenerTodosRepuestos();
     }
@@ -30,5 +30,24 @@ public class InventarioServiceImpl extends UnicastRemoteObject implements Invent
     }
     @Override public void liberarReserva(int idReserva) throws RemoteException {
         Database.eliminarReserva(idReserva);
+    }
+    @Override
+    public Ubicacion consultarUbicacion(int idUbicacion) throws java.rmi.RemoteException {
+        return Database.obtenerUbicacionPorId(idUbicacion);
+    }
+
+    @Override
+    public int consultarStockUbicacion(int idUbicacion) throws java.rmi.RemoteException {
+        return Database.obtenerStockTotalPorUbicacion(idUbicacion);
+    }
+
+    @Override
+    public Vehiculo consultarVehiculo(int idVehiculo) throws java.rmi.RemoteException {
+        return Database.obtenerVehiculoPorId(idVehiculo);
+    }
+
+    @Override
+    public Repuesto consultarRepuestoEnUbicacion(int idUbicacion, int sku) throws java.rmi.RemoteException {
+        return Database.obtenerRepuestoPorUbicacion(idUbicacion, sku);
     }
 }

@@ -67,11 +67,16 @@ public class Database {
         return null;
     }
 
-    public static void insertarReserva(int idVehiculo,int sku,int cantidad){
-        String sql="INSERT INTO reservas(idVehiculo,sku,cantidad) VALUES(?,?,?)";
-        try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement(sql)){
-            ps.setInt(1,idVehiculo);ps.setInt(2,sku);ps.setInt(3,cantidad);ps.executeUpdate();
-        }catch(SQLException e){e.printStackTrace();}
+    public static void insertarReserva(int idVehiculo, int sku, int cantidad) {
+        String sql = "INSERT INTO reservas(idVehiculo,sku,cantidad,fecha) VALUES(?,?,?,NOW())";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, idVehiculo);
+            ps.setInt(2, sku);
+            ps.setInt(3, cantidad);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void eliminarReserva(int idReserva){
@@ -79,5 +84,59 @@ public class Database {
         try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement(sql)){
             ps.setInt(1,idReserva);ps.executeUpdate();
         }catch(SQLException e){e.printStackTrace();}
+    }
+    public static Ubicacion obtenerUbicacionPorId(int id) {
+        String sql = "SELECT idUbicacion,nombre,direccion,capacidad FROM ubicaciones WHERE idUbicacion=?";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Ubicacion(rs.getInt("idUbicacion"), rs.getString("nombre"), rs.getString("direccion"), rs.getInt("capacidad"));
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return null;
+    }
+
+    public static Vehiculo obtenerVehiculoPorId(int id) {
+        String sql = "SELECT idVehiculo,anio,idUbicacion,nombre,modelo,cilindraje,color FROM vehiculos WHERE idVehiculo=?";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Vehiculo(rs.getInt("idVehiculo"), rs.getInt("anio"), rs.getInt("idUbicacion"), rs.getString("nombre"), rs.getString("modelo"), rs.getString("cilindraje"), rs.getString("color"));
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return null;
+    }
+
+    public static int obtenerStockTotalPorUbicacion(int idUbicacion) {
+        String sql = "SELECT COALESCE(SUM(cantidad),0) AS total FROM repuestos WHERE idUbicacion=?";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, idUbicacion);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("total");
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
+    }
+    
+    public static Repuesto obtenerRepuestoPorUbicacion(int idUbicacion, int sku) {
+        String sql = "SELECT sku,nombre,cantidad,precio,disponible FROM repuestos WHERE idUbicacion=? AND sku=?";
+        try (Connection c = getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, idUbicacion);
+            ps.setInt(2, sku);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    boolean disp = "si".equalsIgnoreCase(rs.getString("disponible"));
+                    return new Repuesto(rs.getInt("sku"), rs.getString("nombre"), rs.getInt("cantidad"), rs.getInt("precio"), disp);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
