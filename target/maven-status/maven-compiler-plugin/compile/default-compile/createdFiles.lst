@@ -1,0 +1,11 @@
+com/empresa/cliente/ClienteConsole.class
+com/empresa/inventario/InventarioServiceImpl.class
+com/empresa/inventario/Repuesto.class
+com/empresa/server/ServerMain.class
+com/empresa/inventario/InventarioService.class
+com/empresa/inventario/Reserva.class
+com/empresa/web/RmiConfig.class
+com/empresa/operario/OperarioConsole.class
+com/empresa/web/WebController.class
+com/empresa/inventario/Database.class
+com/empresa/web/Application.class

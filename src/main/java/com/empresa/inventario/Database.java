@@ -1,0 +1,83 @@
+package com.empresa.inventario;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class Database {
+    private static final String URL = "jdbc:mysql://localhost:3306/bd_lyl?serverTimezone=UTC";
+    private static final String USER = "root";
+    private static final String PASS = "axeler8";
+    static { try { Class.forName("com.mysql.cj.jdbc.Driver"); } catch(Exception e){ throw new RuntimeException(e);} }
+
+    private static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(URL,USER,PASS);
+    }
+
+    public static List<Repuesto> obtenerTodosRepuestos() {
+        String sql="SELECT sku,nombre,cantidad,precio,disponible FROM repuestos";
+        List<Repuesto> list=new ArrayList<>();
+        try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement(sql);ResultSet rs=ps.executeQuery()){
+            while(rs.next()){
+                boolean disp="si".equalsIgnoreCase(rs.getString("disponible"));
+                list.add(new Repuesto(rs.getInt("sku"),rs.getString("nombre"),rs.getInt("cantidad"),rs.getInt("precio"),disp));
+            }
+        }catch(SQLException e){e.printStackTrace();}
+        return list;
+    }
+
+    public static Repuesto obtenerRepuestoPorSku(int sku){
+        String sql="SELECT sku,nombre,cantidad,precio,disponible FROM repuestos WHERE sku=?";
+        try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement(sql)){
+            ps.setInt(1,sku);
+            try(ResultSet rs=ps.executeQuery()){ if(rs.next()){ boolean disp="si".equalsIgnoreCase(rs.getString("disponible")); return new Repuesto(rs.getInt("sku"),rs.getString("nombre"),rs.getInt("cantidad"),rs.getInt("precio"),disp);} }
+        }catch(SQLException e){e.printStackTrace();}
+        return null;
+    }
+
+    public static void insertarRepuesto(int idUbicacion,int sku,int cantidad,int precio,boolean disponible,String nombre){
+        String sql="INSERT INTO repuestos(idUbicacion,sku,cantidad,precio,disponible,nombre) VALUES(?,?,?,?,?,?)";
+        try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement(sql)){
+            ps.setInt(1,idUbicacion);ps.setInt(2,sku);ps.setInt(3,cantidad);ps.setInt(4,precio);ps.setString(5,disponible?"si":"no");ps.setString(6,nombre);ps.executeUpdate();
+        }catch(SQLException e){e.printStackTrace();}
+    }
+
+    public static void actualizarStock(int idUbicacion,int sku,int delta){
+        String sql="UPDATE repuestos SET cantidad=cantidad+? WHERE idUbicacion=? AND sku=?";
+        try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement(sql)){
+            ps.setInt(1,delta);ps.setInt(2,idUbicacion);ps.setInt(3,sku);ps.executeUpdate();
+        }catch(SQLException e){e.printStackTrace();}
+    }
+
+    public static List<Reserva> obtenerTodasReservas(){
+        String sql="SELECT idReserva,idVehiculo,sku,cantidad FROM reservas";
+        List<Reserva> list=new ArrayList<>();
+        try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement(sql);ResultSet rs=ps.executeQuery()){
+            while(rs.next()){list.add(new Reserva(rs.getInt("idReserva"),rs.getInt("idVehiculo"),rs.getInt("sku"),rs.getInt("cantidad")));}
+        }catch(SQLException e){e.printStackTrace();}
+        return list;
+    }
+
+    public static Reserva obtenerReservaPorId(int idReserva){
+        String sql="SELECT idReserva,idVehiculo,sku,cantidad FROM reservas WHERE idReserva=?";
+        try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement(sql)){
+            ps.setInt(1,idReserva);
+            try(ResultSet rs=ps.executeQuery()){if(rs.next()){return new Reserva(rs.getInt("idReserva"),rs.getInt("idVehiculo"),rs.getInt("sku"),rs.getInt("cantidad"));}}
+        }catch(SQLException e){e.printStackTrace();}
+        return null;
+    }
+
+    public static void insertarReserva(int idVehiculo,int sku,int cantidad){
+        String sql="INSERT INTO reservas(idVehiculo,sku,cantidad) VALUES(?,?,?)";
+        try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement(sql)){
+            ps.setInt(1,idVehiculo);ps.setInt(2,sku);ps.setInt(3,cantidad);ps.executeUpdate();
+        }catch(SQLException e){e.printStackTrace();}
+    }
+
+    public static void eliminarReserva(int idReserva){
+        String sql="DELETE FROM reservas WHERE idReserva=?";
+        try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement(sql)){
+            ps.setInt(1,idReserva);ps.executeUpdate();
+        }catch(SQLException e){e.printStackTrace();}
+    }
+}

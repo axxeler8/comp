@@ -1,0 +1,11 @@
+/home/axeler8/inventario-paralela/src/main/java/com/empresa/application/RmiConfig.java
+/home/axeler8/inventario-paralela/src/main/java/com/empresa/inventario/Repuesto.java
+/home/axeler8/inventario-paralela/src/main/java/com/empresa/web/WebController.java
+/home/axeler8/inventario-paralela/src/main/java/com/empresa/application/Application.java
+/home/axeler8/inventario-paralela/src/main/java/com/empresa/inventario/InventarioService.java
+/home/axeler8/inventario-paralela/src/main/java/com/empresa/server/ServerMain.java
+/home/axeler8/inventario-paralela/src/main/java/com/empresa/inventario/InventarioServiceImpl.java
+/home/axeler8/inventario-paralela/src/main/java/com/empresa/operario/OperarioConsole.java
+/home/axeler8/inventario-paralela/src/main/java/com/empresa/inventario/Database.java
+/home/axeler8/inventario-paralela/src/main/java/com/empresa/cliente/ClienteConsole.java
+/home/axeler8/inventario-paralela/src/main/java/com/empresa/inventario/Reserva.java
