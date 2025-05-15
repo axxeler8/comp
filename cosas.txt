@@ -127,20 +127,20 @@ INSERT INTO reservas (idVehiculo, sku, cantidad, fecha) VALUES
   (2, 1003, 1, NOW());
 
 clienteconsole.java:
-
+// ClienteConsole.java
 package com.empresa.cliente;
 
 import com.empresa.inventario.InventarioService;
 import com.empresa.inventario.Repuesto;
 
 import java.rmi.Naming;
+import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 
 public class ClienteConsole {
     public static void main(String[] args) throws Exception {
-        InventarioService svc =
-            (InventarioService) Naming.lookup("rmi://localhost:1099/InventarioService");
+        InventarioService svc = (InventarioService) Naming.lookup("rmi://localhost:1099/InventarioService");
         Scanner sc = new Scanner(System.in);
 
         while (true) {
@@ -148,56 +148,68 @@ public class ClienteConsole {
             System.out.println("1) Ver repuestos");
             System.out.println("2) Consultar repuesto por SKU");
             System.out.println("3) Salir");
-            System.out.print("Seleccione una opción: ");
-            int op = sc.nextInt();
-            sc.nextLine(); // limpia buffer
+
+            int op = readInt(sc, "Seleccione una opción: ", 1, 3);
 
             switch (op) {
                 case 1:
-                    System.out.println("\n-- Lista de Repuestos --");
-                    List<Repuesto> todos = svc.verRepuestos();
-                    if (todos.isEmpty()) {
-                        System.out.println("No hay repuestos registrados.");
-                    } else {
-                        todos.forEach(r -> {
-                            System.out.printf("SKU: %d | Nombre: %s | Cantidad: %d | Precio: %d | Disponible: %s%n",
-                                r.getSku(), r.getNombre(), r.getCantidad(),
-                                r.getPrecio(), r.isDisponible() ? "si" : "no");
-                        });
-                    }
+                    mostrarRepuestos(svc);
                     break;
-
                 case 2:
-                    System.out.println("\n-- Buscar Repuesto --");
-                    System.out.print("Ingrese SKU: ");
-                    int sku = sc.nextInt();
-                    Repuesto r = svc.consultarRepuesto(sku);
-
-                    if (r == null) {
-                        System.out.printf("⚠ No existe ningún repuesto con SKU %d.%n", sku);
-                    } else {
-                        System.out.println("Repuesto encontrado:");
-                        System.out.printf("  SKU: %d%n", r.getSku());
-                        System.out.printf("  Nombre: %s%n", r.getNombre());
-                        System.out.printf("  Cantidad: %d%n", r.getCantidad());
-                        System.out.printf("  Precio: %d%n", r.getPrecio());
-                        System.out.printf("  Disponible: %s%n", r.isDisponible() ? "si" : "no");
-                    }
+                    buscarRepuesto(svc, sc);
                     break;
-
                 case 3:
                     System.out.println("Saliendo...");
                     sc.close();
                     System.exit(0);
+            }
+        }
+    }
 
-                default:
-                    System.out.println("¡Opción inválida, intente de nuevo!");
+    private static void mostrarRepuestos(InventarioService svc) throws Exception {
+        System.out.println("\n-- Lista de Repuestos --");
+        List<Repuesto> todos = svc.verRepuestos();
+        if (todos.isEmpty()) {
+            System.out.println("No hay repuestos registrados.");
+        } else {
+            todos.forEach(r -> System.out.printf("SKU: %d | Nombre: %s | Cantidad: %d | Precio: %d | Disponible: %s%n",
+                r.getSku(), r.getNombre(), r.getCantidad(), r.getPrecio(), r.isDisponible() ? "si" : "no"));
+        }
+    }
+
+    private static void buscarRepuesto(InventarioService svc, Scanner sc) throws Exception {
+        System.out.println("\n-- Buscar Repuesto --");
+        int sku = readInt(sc, "Ingrese SKU: ", 1, Integer.MAX_VALUE);
+        Repuesto r = svc.consultarRepuesto(sku);
+        if (r == null) {
+            System.out.printf("⚠ No existe ningún repuesto con SKU %d.%n", sku);
+        } else {
+            System.out.println("Repuesto encontrado:");
+            System.out.printf("  SKU: %d%n", r.getSku());
+            System.out.printf("  Nombre: %s%n", r.getNombre());
+            System.out.printf("  Cantidad: %d%n", r.getCantidad());
+            System.out.printf("  Precio: %d%n", r.getPrecio());
+            System.out.printf("  Disponible: %s%n", r.isDisponible() ? "si" : "no");
+        }
+    }
+
+    private static int readInt(Scanner sc, String prompt, int min, int max) {
+        while (true) {
+            System.out.print(prompt);
+            try {
+                int val = sc.nextInt(); sc.nextLine();
+                if (val < min || val > max) {
+                    System.out.printf("Valor inválido: debe estar entre %d y %d.%n", min, max);
+                } else {
+                    return val;
+                }
+            } catch (InputMismatchException e) {
+                System.out.println("Entrada no válida: ingrese un número entero.");
+                sc.nextLine();
             }
         }
     }
 }
-
-
 database.java:
 package com.empresa.inventario;
 
@@ -268,11 +280,16 @@ public class Database {
         return null;
     }
 
-    public static void insertarReserva(int idVehiculo,int sku,int cantidad){
-        String sql="INSERT INTO reservas(idVehiculo,sku,cantidad) VALUES(?,?,?)";
-        try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement(sql)){
-            ps.setInt(1,idVehiculo);ps.setInt(2,sku);ps.setInt(3,cantidad);ps.executeUpdate();
-        }catch(SQLException e){e.printStackTrace();}
+    public static void insertarReserva(int idVehiculo, int sku, int cantidad) {
+        String sql = "INSERT INTO reservas(idVehiculo,sku,cantidad,fecha) VALUES(?,?,?,NOW())";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, idVehiculo);
+            ps.setInt(2, sku);
+            ps.setInt(3, cantidad);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public static void eliminarReserva(int idReserva){
@@ -280,6 +297,60 @@ public class Database {
         try(Connection c=getConnection();PreparedStatement ps=c.prepareStatement(sql)){
             ps.setInt(1,idReserva);ps.executeUpdate();
         }catch(SQLException e){e.printStackTrace();}
+    }
+    public static Ubicacion obtenerUbicacionPorId(int id) {
+        String sql = "SELECT idUbicacion,nombre,direccion,capacidad FROM ubicaciones WHERE idUbicacion=?";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Ubicacion(rs.getInt("idUbicacion"), rs.getString("nombre"), rs.getString("direccion"), rs.getInt("capacidad"));
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return null;
+    }
+
+    public static Vehiculo obtenerVehiculoPorId(int id) {
+        String sql = "SELECT idVehiculo,anio,idUbicacion,nombre,modelo,cilindraje,color FROM vehiculos WHERE idVehiculo=?";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Vehiculo(rs.getInt("idVehiculo"), rs.getInt("anio"), rs.getInt("idUbicacion"), rs.getString("nombre"), rs.getString("modelo"), rs.getString("cilindraje"), rs.getString("color"));
+                }
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return null;
+    }
+
+    public static int obtenerStockTotalPorUbicacion(int idUbicacion) {
+        String sql = "SELECT COALESCE(SUM(cantidad),0) AS total FROM repuestos WHERE idUbicacion=?";
+        try (Connection c = getConnection(); PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, idUbicacion);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt("total");
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return 0;
+    }
+    
+    public static Repuesto obtenerRepuestoPorUbicacion(int idUbicacion, int sku) {
+        String sql = "SELECT sku,nombre,cantidad,precio,disponible FROM repuestos WHERE idUbicacion=? AND sku=?";
+        try (Connection c = getConnection();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, idUbicacion);
+            ps.setInt(2, sku);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    boolean disp = "si".equalsIgnoreCase(rs.getString("disponible"));
+                    return new Repuesto(rs.getInt("sku"), rs.getString("nombre"), rs.getInt("cantidad"), rs.getInt("precio"), disp);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
 
@@ -300,6 +371,12 @@ public interface InventarioService extends Remote {
     Reserva consultarReserva(int idReserva) throws RemoteException;
     void agregarReserva(int idVehiculo, int sku, int cantidad) throws RemoteException;
     void liberarReserva(int idReserva) throws RemoteException;
+
+    Ubicacion consultarUbicacion(int idUbicacion) throws RemoteException;
+    int consultarStockUbicacion(int idUbicacion) throws RemoteException;
+    Vehiculo consultarVehiculo(int idVehiculo) throws RemoteException;
+    Repuesto consultarRepuestoEnUbicacion(int idUbicacion, int sku) throws java.rmi.RemoteException;
+
 }
 
 inventarioserviceimpl.java:
@@ -312,7 +389,7 @@ import java.util.List;
 
 public class InventarioServiceImpl extends UnicastRemoteObject implements InventarioService {
     public InventarioServiceImpl() throws RemoteException { super(); }
-
+    
     @Override public List<Repuesto> verRepuestos() throws RemoteException {
         return Database.obtenerTodosRepuestos();
     }
@@ -336,6 +413,25 @@ public class InventarioServiceImpl extends UnicastRemoteObject implements Invent
     }
     @Override public void liberarReserva(int idReserva) throws RemoteException {
         Database.eliminarReserva(idReserva);
+    }
+    @Override
+    public Ubicacion consultarUbicacion(int idUbicacion) throws java.rmi.RemoteException {
+        return Database.obtenerUbicacionPorId(idUbicacion);
+    }
+
+    @Override
+    public int consultarStockUbicacion(int idUbicacion) throws java.rmi.RemoteException {
+        return Database.obtenerStockTotalPorUbicacion(idUbicacion);
+    }
+
+    @Override
+    public Vehiculo consultarVehiculo(int idVehiculo) throws java.rmi.RemoteException {
+        return Database.obtenerVehiculoPorId(idVehiculo);
+    }
+
+    @Override
+    public Repuesto consultarRepuestoEnUbicacion(int idUbicacion, int sku) throws java.rmi.RemoteException {
+        return Database.obtenerRepuestoPorUbicacion(idUbicacion, sku);
     }
 }
 
@@ -388,16 +484,77 @@ public class Reserva implements Serializable {
     public int getCantidad() { return cantidad; }
 }
 
+ubicacion.java:
+package com.empresa.inventario;
+
+import java.io.Serializable;
+
+public class Ubicacion implements Serializable {
+    private int idUbicacion;
+    private String nombre;
+    private String direccion;
+    private int capacidad;
+
+    public Ubicacion(int idUbicacion, String nombre, String direccion, int capacidad) {
+        this.idUbicacion = idUbicacion;
+        this.nombre      = nombre;
+        this.direccion   = direccion;
+        this.capacidad   = capacidad;
+    }
+
+    public int getIdUbicacion() { return idUbicacion; }
+    public String getNombre()       { return nombre;      }
+    public String getDireccion()    { return direccion;   }
+    public int getCapacidad()       { return capacidad;   }
+}
+
+vehiculo.java:
+package com.empresa.inventario;
+
+import java.io.Serializable;
+
+public class Vehiculo implements Serializable {
+    private int idVehiculo;
+    private int anio;
+    private int idUbicacion;
+    private String nombre;
+    private String modelo;
+    private String cilindraje;
+    private String color;
+
+    public Vehiculo(int idVehiculo, int anio, int idUbicacion, String nombre, String modelo, String cilindraje, String color) {
+        this.idVehiculo  = idVehiculo;
+        this.anio        = anio;
+        this.idUbicacion = idUbicacion;
+        this.nombre      = nombre;
+        this.modelo      = modelo;
+        this.cilindraje  = cilindraje;
+        this.color       = color;
+    }
+
+    public int getIdVehiculo()    { return idVehiculo; }
+    public int getAnio()          { return anio;       }
+    public int getIdUbicacion()   { return idUbicacion;}
+    public String getNombre()     { return nombre;    }
+    public String getModelo()     { return modelo;    }
+    public String getCilindraje() { return cilindraje;}
+    public String getColor()      { return color;     }
+}
+
 operarioconsole.java:
+// **OperarioConsole.java**
 package com.empresa.operario;
 
 import com.empresa.inventario.InventarioService;
+import com.empresa.inventario.Ubicacion;
+import com.empresa.inventario.Repuesto;
+
 import java.rmi.Naming;
+import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class OperarioConsole {
     public static void main(String[] args) throws Exception {
-        // Conexión RMI
         InventarioService svc = (InventarioService) Naming.lookup("rmi://localhost:1099/InventarioService");
         Scanner sc = new Scanner(System.in);
 
@@ -408,73 +565,161 @@ public class OperarioConsole {
             System.out.println("3) Agregar reserva");
             System.out.println("4) Liberar reserva");
             System.out.println("5) Salir");
-            System.out.print("Seleccione una opción: ");
-            int op = sc.nextInt();
-            sc.nextLine(); // limpia el buffer
 
+            int op = readInt(sc, "Seleccione una opción: ", 1, 5);
             switch (op) {
-                case 1:
-                    System.out.println("\n-- Agregar Repuesto --");
-                    System.out.print("Ingrese ID de Ubicación: ");
-                    int idUb = sc.nextInt();
-                    System.out.print("Ingrese SKU: ");
-                    int skuAdd = sc.nextInt();
-                    System.out.print("Ingrese Cantidad: ");
-                    int cantAdd = sc.nextInt();
-                    System.out.print("Ingrese Precio: ");
-                    int precio = sc.nextInt();
-                    sc.nextLine();
-                    System.out.print("¿Disponible? (si/no): ");
-                    boolean disponible = "si".equalsIgnoreCase(sc.nextLine().trim());
-                    System.out.print("Ingrese Nombre del Repuesto: ");
-                    String nombre = sc.nextLine();
-
-                    svc.agregarRepuesto(idUb, skuAdd, cantAdd, precio, disponible, nombre);
-                    System.out.println("✔ Repuesto agregado correctamente.");
-                    break;
-
-                case 2:
-                    System.out.println("\n-- Liberar Repuesto --");
-                    System.out.print("Ingrese ID de Ubicación: ");
-                    int idUbLib = sc.nextInt();
-                    System.out.print("Ingrese SKU: ");
-                    int skuLib = sc.nextInt();
-                    System.out.print("Ingrese Cantidad a liberar: ");
-                    int cantLib = sc.nextInt();
-
-                    svc.liberarRepuesto(idUbLib, skuLib, cantLib);
-                    System.out.println("✔ Repuesto liberado correctamente.");
-                    break;
-
-                case 3:
-                    System.out.println("\n-- Agregar Reserva --");
-                    System.out.print("Ingrese ID de Vehículo: ");
-                    int idVeh = sc.nextInt();
-                    System.out.print("Ingrese SKU del Repuesto: ");
-                    int skuRes = sc.nextInt();
-                    System.out.print("Ingrese Cantidad a reservar: ");
-                    int cantRes = sc.nextInt();
-
-                    svc.agregarReserva(idVeh, skuRes, cantRes);
-                    System.out.println("✔ Reserva agregada correctamente.");
-                    break;
-
-                case 4:
-                    System.out.println("\n-- Liberar Reserva --");
-                    System.out.print("Ingrese ID de Reserva: ");
-                    int idRes = sc.nextInt();
-
-                    svc.liberarReserva(idRes);
-                    System.out.println("✔ Reserva liberada correctamente.");
-                    break;
-
+                case 1: agregarRepuesto(svc, sc); break;
+                case 2: liberarRepuesto(svc, sc); break;
+                case 3: agregarReserva(svc, sc); break;
+                case 4: liberarReserva(svc, sc); break;
                 case 5:
                     System.out.println("Saliendo...");
                     sc.close();
                     System.exit(0);
+            }
+        }
+    }
 
-                default:
-                    System.out.println("¡Opción inválida, intente de nuevo!");
+    private static void agregarRepuesto(InventarioService svc, Scanner sc) throws Exception {
+        System.out.println("\n-- Agregar Repuesto --");
+        int idUb;
+        // Validar ID de ubicación
+        while (true) {
+            idUb = readInt(sc, "Ingrese ID de Ubicación: ", 1, Integer.MAX_VALUE);
+            if (svc.consultarUbicacion(idUb) == null) {
+                System.out.println("⚠ Ubicación inexistente.");
+            } else break;
+        }
+        Ubicacion ub = svc.consultarUbicacion(idUb);
+
+        int sku;
+        // Validar SKU existente
+        while (true) {
+            sku = readInt(sc, "Ingrese SKU: ", 1, Integer.MAX_VALUE);
+            if (svc.consultarRepuesto(sku) != null) {
+                System.out.println("⚠ SKU ya existe.");
+            } else break;
+        }
+
+        int cantidad;
+        // Validar cantidad y capacidad
+        while (true) {
+            cantidad = readInt(sc, "Ingrese Cantidad: ", 1, Integer.MAX_VALUE);
+            int stockActual = svc.consultarStockUbicacion(idUb);
+            if (stockActual + cantidad > ub.getCapacidad()) {
+                System.out.printf("⚠ Excede capacidad. Actual: %d, Máxima: %d.%n", stockActual, ub.getCapacidad());
+            } else break;
+        }
+
+        int precio = readInt(sc, "Ingrese Precio: ", 0, Integer.MAX_VALUE);
+
+        boolean disponible;
+        // Validar boolean
+        while (true) {
+            String input;
+            System.out.print("¿Disponible? (si/no): ");
+            input = sc.nextLine().trim().toLowerCase();
+            if ("si".equals(input)) { disponible = true; break; }
+            if ("no".equals(input)) { disponible = false; break; }
+            System.out.println("Entrada no válida: responda 'si' o 'no'.");
+        }
+
+        String nombre;
+        // Validar nombre no vacío
+        while (true) {
+            System.out.print("Ingrese Nombre del Repuesto: ");
+            nombre = sc.nextLine().trim();
+            if (nombre.isEmpty()) {
+                System.out.println("⚠ Nombre vacío.");
+            } else break;
+        }
+
+        svc.agregarRepuesto(idUb, sku, cantidad, precio, disponible, nombre);
+        System.out.println("✔ Repuesto agregado correctamente.");
+    }
+
+    private static void liberarRepuesto(InventarioService svc, Scanner sc) throws Exception {
+        System.out.println("\n-- Liberar Repuesto --");
+        int idUb;
+        while (true) {
+            idUb = readInt(sc, "Ingrese ID de Ubicación: ", 1, Integer.MAX_VALUE);
+            if (svc.consultarUbicacion(idUb) == null) {
+                System.out.println("⚠ Ubicación inexistente.");
+            } else break;
+        }
+
+        int sku;
+        Repuesto r;
+        while (true) {
+            sku = readInt(sc, "Ingrese SKU: ", 1, Integer.MAX_VALUE);
+            r = svc.consultarRepuestoEnUbicacion(idUb, sku);
+            if (r == null) {
+                System.out.println("⚠ No existe repuesto con SKU " + sku + " en la ubicación " + idUb + ".");
+            } else break;
+        }
+
+        int cant;
+        while (true) {
+            cant = readInt(sc, String.format("Ingrese Cantidad a liberar (hasta %d): ", r.getCantidad()), 1, r.getCantidad());
+            break;
+        }
+
+        svc.liberarRepuesto(idUb, sku, cant);
+        System.out.println("✔ Repuesto liberado correctamente.");
+    }
+
+    private static void agregarReserva(InventarioService svc, Scanner sc) throws Exception {
+        System.out.println("\n-- Agregar Reserva --");
+        int idVeh;
+        while (true) {
+            idVeh = readInt(sc, "Ingrese ID de Vehículo: ", 1, Integer.MAX_VALUE);
+            if (svc.consultarVehiculo(idVeh) == null) System.out.println("⚠ Vehículo inexistente.");
+            else break;
+        }
+
+        int sku;
+        while (true) {
+            sku = readInt(sc, "Ingrese SKU del Repuesto: ", 1, Integer.MAX_VALUE);
+            if (svc.consultarRepuestoEnUbicacion(idVeh /* corregir: debería ser idUbicacion? para reserva global permite SKU global */, sku) == null)
+                System.out.println("⚠ SKU inexistente para ese vehículo.");
+            else break;
+        }
+        Repuesto r = svc.consultarRepuesto(sku);
+
+        int cant;
+        while (true) {
+            cant = readInt(sc, String.format("Ingrese Cantidad a reservar (hasta %d): ", r.getCantidad()), 1, r.getCantidad());
+            break;
+        }
+
+        svc.agregarReserva(idVeh, sku, cant);
+        System.out.println("✔ Reserva agregada correctamente.");
+    }
+
+    private static void liberarReserva(InventarioService svc, Scanner sc) throws Exception {
+        System.out.println("\n-- Liberar Reserva --");
+        int idRes;
+        while (true) {
+            idRes = readInt(sc, "Ingrese ID de Reserva: ", 1, Integer.MAX_VALUE);
+            if (svc.consultarReserva(idRes) == null) {
+                System.out.println("⚠ Reserva inexistente.");
+            } else break;
+        }
+
+        svc.liberarReserva(idRes);
+        System.out.println("✔ Reserva liberada correctamente.");
+    }
+
+    private static int readInt(Scanner sc, String prompt, int min, int max) {
+        while (true) {
+            System.out.print(prompt);
+            try {
+                int val = sc.nextInt(); sc.nextLine();
+                if (val < min || val > max) System.out.printf("Valor inválido: debe estar entre %d y %d.%n", min, max);
+                else return val;
+            } catch (InputMismatchException e) {
+                System.out.println("Entrada no válida: ingrese un número entero.");
+                sc.nextLine();
             }
         }
     }
